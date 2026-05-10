@@ -23,6 +23,8 @@ Adafruit_MPU6050 mpu;
 Pet myPet = {86.0f, 160.0f, 0.0f, 0.0f, 0, 0, 0};
 SystemState currentState = IDLE;
 unsigned long lastFrameMs = 0;
+unsigned long lastXpGainMs = 0;
+unsigned long lastHungerTickMs = 0;
 
 class MeshtasticAdvertisedDeviceCallbacks : public NimBLEAdvertisedDeviceCallbacks {
   void onResult(NimBLEAdvertisedDevice *advertisedDevice) override {
@@ -31,6 +33,7 @@ class MeshtasticAdvertisedDeviceCallbacks : public NimBLEAdvertisedDeviceCallbac
     }
   }
 };
+static MeshtasticAdvertisedDeviceCallbacks callbacks;
 
 void updatePhysics() {
   sensors_event_t a, g, temp;
@@ -53,8 +56,9 @@ void updatePhysics() {
   }
 
   const float shake = fabs(a.acceleration.x) + fabs(a.acceleration.y) + fabs(a.acceleration.z);
-  if (shake > 25.0f) {
+  if (shake > 25.0f && (millis() - lastXpGainMs) > 500) {
     myPet.xp = std::min(myPet.xp + 1, 999999);
+    lastXpGainMs = millis();
   }
 
   if (a.acceleration.z < -8.0f) {
@@ -97,7 +101,6 @@ void setup() {
 
   NimBLEDevice::init("");
   NimBLEScan *scanner = NimBLEDevice::getScan();
-  static MeshtasticAdvertisedDeviceCallbacks callbacks;
   scanner->setAdvertisedDeviceCallbacks(&callbacks);
   scanner->setActiveScan(true);
   scanner->start(2, false);
@@ -107,7 +110,10 @@ void loop() {
   switch (currentState) {
     case IDLE:
       updatePhysics();
-      myPet.hunger = std::min(myPet.hunger + 1, 999999);
+      if ((millis() - lastHungerTickMs) > 3000) {
+        myPet.hunger = std::min(myPet.hunger + 1, 999999);
+        lastHungerTickMs = millis();
+      }
       drawFrame();
       break;
     case ALERT:
