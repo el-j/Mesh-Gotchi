@@ -6,6 +6,15 @@
 #include <cmath>
 
 enum SystemState { SLEEP, IDLE, ALERT, MENU };
+constexpr int kScreenWidth = 172;
+constexpr int kScreenHeight = 320;
+constexpr int kPetSize = 64;
+constexpr int kStatCap = 999999;
+constexpr float kShakeThreshold = 25.0f;
+constexpr unsigned long kXpGainCooldownMs = 500;
+constexpr unsigned long kHungerTickIntervalMs = 3000;
+constexpr float kSleepThreshold = -8.0f;
+constexpr float kWakeThreshold = -7.5f;
 
 struct Pet {
   float x;
@@ -33,7 +42,6 @@ class MeshtasticAdvertisedDeviceCallbacks : public NimBLEAdvertisedDeviceCallbac
     }
   }
 };
-static MeshtasticAdvertisedDeviceCallbacks callbacks;
 
 void updatePhysics() {
   sensors_event_t a, g, temp;
@@ -46,22 +54,22 @@ void updatePhysics() {
   myPet.dx *= 0.9f;
   myPet.dy *= 0.9f;
 
-  if (myPet.x <= 0 || myPet.x >= (172 - 64)) {
+  if (myPet.x <= 0 || myPet.x >= (kScreenWidth - kPetSize)) {
     myPet.dx *= -0.8f;
-    myPet.x = std::max(0.0f, std::min(myPet.x, 108.0f));
+    myPet.x = std::max(0.0f, std::min(myPet.x, static_cast<float>(kScreenWidth - kPetSize)));
   }
-  if (myPet.y <= 0 || myPet.y >= (320 - 64)) {
+  if (myPet.y <= 0 || myPet.y >= (kScreenHeight - kPetSize)) {
     myPet.dy *= -0.8f;
-    myPet.y = std::max(0.0f, std::min(myPet.y, 256.0f));
+    myPet.y = std::max(0.0f, std::min(myPet.y, static_cast<float>(kScreenHeight - kPetSize)));
   }
 
   const float shake = fabs(a.acceleration.x) + fabs(a.acceleration.y) + fabs(a.acceleration.z);
-  if (shake > 25.0f && (millis() - lastXpGainMs) > 500) {
-    myPet.xp = std::min(myPet.xp + 1, 999999);
+  if (shake > kShakeThreshold && (millis() - lastXpGainMs) > kXpGainCooldownMs) {
+    myPet.xp = std::min(myPet.xp + 1, kStatCap);
     lastXpGainMs = millis();
   }
 
-  if (a.acceleration.z < -8.0f) {
+  if (a.acceleration.z < kSleepThreshold) {
     currentState = SLEEP;
   }
 }
@@ -96,11 +104,12 @@ void setup() {
 
   tft.init();
   tft.setRotation(1);
-  canvas.createSprite(172, 320);
+  canvas.createSprite(kScreenWidth, kScreenHeight);
   canvas.setTextColor(TFT_WHITE, TFT_BLACK);
 
   NimBLEDevice::init("");
   NimBLEScan *scanner = NimBLEDevice::getScan();
+  static MeshtasticAdvertisedDeviceCallbacks callbacks;
   scanner->setAdvertisedDeviceCallbacks(&callbacks);
   scanner->setActiveScan(true);
   scanner->start(2, false);
@@ -110,8 +119,8 @@ void loop() {
   switch (currentState) {
     case IDLE:
       updatePhysics();
-      if ((millis() - lastHungerTickMs) > 3000) {
-        myPet.hunger = std::min(myPet.hunger + 1, 999999);
+      if ((millis() - lastHungerTickMs) > kHungerTickIntervalMs) {
+        myPet.hunger = std::min(myPet.hunger + 1, kStatCap);
         lastHungerTickMs = millis();
       }
       drawFrame();
@@ -123,7 +132,7 @@ void loop() {
       delay(100);
       sensors_event_t a, g, temp;
       mpu.getEvent(&a, &g, &temp);
-      if (a.acceleration.z > -7.5f) {
+      if (a.acceleration.z > kWakeThreshold) {
         currentState = IDLE;
       }
       break;
