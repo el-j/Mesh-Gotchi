@@ -11,14 +11,14 @@ This repository is prepared as a monorepo with 3 focused workspaces:
 ### Hardware firmware (PlatformIO)
 
 ```bash
-cd /home/runner/work/Mesh-Gotchi/Mesh-Gotchi/apps/hardware
+cd apps/hardware
 pio run
 ```
 
 ### Frontend prototype
 
-Open `/home/runner/work/Mesh-Gotchi/Mesh-Gotchi/apps/frontend/index.html` in a browser.
+Open `apps/frontend/index.html` in a browser.
 
 ### 3D prototype
 
-Open `/home/runner/work/Mesh-Gotchi/Mesh-Gotchi/apps/3d-code/index.html` in a browser.
+Open `apps/3d-code/index.html` in a browser.

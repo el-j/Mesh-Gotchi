@@ -45,14 +45,16 @@ void updatePhysics() {
 
   if (myPet.x <= 0 || myPet.x >= (172 - 64)) {
     myPet.dx *= -0.8f;
+    myPet.x = std::max(0.0f, std::min(myPet.x, 108.0f));
   }
   if (myPet.y <= 0 || myPet.y >= (320 - 64)) {
     myPet.dy *= -0.8f;
+    myPet.y = std::max(0.0f, std::min(myPet.y, 256.0f));
   }
 
   const float shake = fabs(a.acceleration.x) + fabs(a.acceleration.y) + fabs(a.acceleration.z);
   if (shake > 25.0f) {
-    myPet.xp += 1;
+    myPet.xp = std::min(myPet.xp + 1, 999999);
   }
 
   if (a.acceleration.z < -8.0f) {
@@ -95,7 +97,8 @@ void setup() {
 
   NimBLEDevice::init("");
   NimBLEScan *scanner = NimBLEDevice::getScan();
-  scanner->setAdvertisedDeviceCallbacks(new MeshtasticAdvertisedDeviceCallbacks());
+  static MeshtasticAdvertisedDeviceCallbacks callbacks;
+  scanner->setAdvertisedDeviceCallbacks(&callbacks);
   scanner->setActiveScan(true);
   scanner->start(2, false);
 }
@@ -104,23 +107,26 @@ void loop() {
   switch (currentState) {
     case IDLE:
       updatePhysics();
+      myPet.hunger = std::min(myPet.hunger + 1, 999999);
       drawFrame();
       break;
     case ALERT:
       drawAlert();
       break;
-    case SLEEP:
+    case SLEEP: {
       delay(100);
-      if (myPet.dy < 0.3f) {
+      sensors_event_t a, g, temp;
+      mpu.getEvent(&a, &g, &temp);
+      if (a.acceleration.z > -7.5f) {
         currentState = IDLE;
       }
       break;
+    }
     case MENU:
       drawFrame();
       break;
   }
 
-  myPet.hunger += 1;
   const unsigned long now = millis();
   const unsigned long frameInterval = 33;
   const unsigned long elapsed = now - lastFrameMs;
