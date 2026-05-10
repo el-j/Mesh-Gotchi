@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mesh-Gotchi 3D Concept</title>
+    <style>
+      body { margin: 0; background: #050816; color: #fff; font-family: system-ui, sans-serif; }
+      #info { position: fixed; top: 12px; left: 12px; }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="info">Mesh-Gotchi 3D concept (Canvas prototype)</div>
+    <canvas id="c"></canvas>
+    <script>
+      const canvas = document.getElementById('c');
+      const ctx = canvas.getContext('2d');
+      function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+      addEventListener('resize', resize); resize();
+      let t = 0;
+      function draw() {
+        t += 0.02;
+        ctx.fillStyle = '#050816';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const r = 90 + Math.sin(t) * 20;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(t);
+        ctx.fillStyle = '#8ec5ff';
+        ctx.fillRect(-r / 2, -r / 2, r, r);
+        ctx.restore();
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+    </script>
+  </body>
+</html>

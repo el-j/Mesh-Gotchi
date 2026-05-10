@@ -1,0 +1,8 @@
+# PlatformIO
+apps/hardware/.pio/
+apps/hardware/.pioenvs/
+apps/hardware/.piolibdeps/
+
+# OS/editor
+.DS_Store
+.vscode/
